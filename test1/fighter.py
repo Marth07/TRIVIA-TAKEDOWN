@@ -4,7 +4,6 @@ import pygame
 class Fighter:
 
     def __init__(self, name, x, y, hp, power, style, image):
-        self.flip = False
         self.name = name
         self.hp = hp
         self.power = power
@@ -12,11 +11,9 @@ class Fighter:
         self.image = image
         self.rect = pygame.Rect((x, y, image.get_width(), image.get_height()))
         self.attacking = False
-        self.attack_type = 0
         self.health = 100
-        
 
-    def move(self, surface, target, screen_width=1280, screen_height=720):
+    def move(self, surface, target, screen_width=1280):
         SPEED = 10
         dx = 0
 
@@ -29,12 +26,7 @@ class Fighter:
                 dx = SPEED
 
         if key[pygame.K_r] or key[pygame.K_t]:
-            self.attack(surface, target)
-
-        if key[pygame.K_r]:
-            self.attack_type = 1
-        if key[pygame.K_t]:
-            self.attack_type = 2
+            self.attack(target)
 
         if self.rect.left + dx < 0:
             dx = -self.rect.left
@@ -44,16 +36,17 @@ class Fighter:
         self.rect.x += dx
         self.attacking = False
 
-    def attack(self, surface, target):
+    def attack(self, target):
         self.attacking = True
+
         attacking = pygame.Rect(
             self.rect.centerx, self.rect.y, 2 * self.rect.width, self.rect.height
         )
-        pygame.draw.rect(surface, (0, 255, 0), attacking)
 
         if attacking.colliderect(target.rect):
             target.health -= self.power
-            print(f"{self.name} attaque ! {target.name} a {target.health} HP restants.")
+            if target.health < 0:
+                target.health = 0
 
     def draw(self, surface):
         surface.blit(self.image, (self.rect.x, self.rect.y))

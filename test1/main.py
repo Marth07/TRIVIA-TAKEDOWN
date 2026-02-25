@@ -5,12 +5,12 @@ from moteur import start_fight
 from fighter import Fighter
 
 pygame.init()
-# Chargement des images
-peter_img = pygame.image.load("assets/Personnages/Peter.png")
-steve_img = pygame.image.load("assets/Personnages/Steve.png")
-nyra_img = pygame.image.load("assets/Personnages/Nyra.png")
-brian_img = pygame.image.load("assets/Personnages/Brian.png")
 
+# IMAGES
+peter_img = pygame.image.load("assets/Personnages/Peter_clean.png")
+steve_img = pygame.image.load("assets/Personnages/Steve_clean.png")
+nyra_img = pygame.image.load("assets/Personnages/Nyra_clean.png")
+brian_img = pygame.image.load("assets/Personnages/Brian_clean.png")
 
 WIDTH, HEIGHT = 1280, 720
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -21,13 +21,11 @@ BLUE = (65, 105, 225)
 
 font_title = pygame.font.SysFont("Arial", 80, bold=True)
 font_menu = pygame.font.SysFont("Arial", 40)
-font_small = pygame.font.SysFont("Arial", 30)
 
-peter = Fighter("Peter", 200, 400, 120, 15, "Lames d'énergie", peter_img)
-steve = Fighter("Steve", 400, 400, 100, 20, "Angles et Trajectoires", steve_img)
-nyra = Fighter("Nyra", 600, 400, 150, 10, "Boucliers de chiffres", nyra_img)
-brian = Fighter("Brian", 800, 400, 80, 25, "Frappe lourde", brian_img)
-
+peter = Fighter("Peter", 150, 500, 120, 15, "Lames", peter_img)
+steve = Fighter("Steve", 1100, 500, 100, 20, "Angles", steve_img)
+nyra = Fighter("Nyra", 150, 500, 150, 10, "Boucliers", nyra_img)
+brian = Fighter("Brian", 1100, 500, 80, 25, "Frappe", brian_img)
 
 characters = [peter, steve, nyra, brian]
 
@@ -39,12 +37,11 @@ def draw_text(text, font, color, x, y):
 
 def select_character():
     running = True
-
     positions = [
-        (WIDTH // 4 - 100, HEIGHT // 2 - 150),
-        (2 * WIDTH // 4 - 100, HEIGHT // 2 - 150),
-        (3 * WIDTH // 4 - 100, HEIGHT // 2 - 150),
-        (WIDTH // 2 - 100, HEIGHT // 2 + 100),
+        (WIDTH // 4 - 100, HEIGHT // 2 - 200),
+        (3 * WIDTH // 4 - 100, HEIGHT // 2 - 200),
+        (WIDTH // 4 - 100, HEIGHT // 2 + 50),
+        (3 * WIDTH // 4 - 100, HEIGHT // 2 + 50),
     ]
 
     boxes = [pygame.Rect(x, y, 200, 200) for x, y in positions]
@@ -60,12 +57,8 @@ def select_character():
             color = BLUE if rect.collidepoint(mouse) else WHITE
             pygame.draw.rect(screen, color, rect, 3)
 
-            draw_text(char.name, font_menu, WHITE, rect.centerx, rect.y + 10)
-            draw_text(f"HP : {char.hp}", font_small, WHITE, rect.centerx, rect.y + 60)
-            draw_text(
-                f"Power : {char.power}", font_small, WHITE, rect.centerx, rect.y + 100
-            )
-            draw_text(char.style, font_small, WHITE, rect.centerx, rect.y + 150)
+            char_img = pygame.transform.scale(char.image, (180, 180))
+            screen.blit(char_img, (rect.x + 10, rect.y + 10))
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -90,8 +83,8 @@ def main_menu():
         mouse = pygame.mouse.get_pos()
 
         options = [("COMBATTRE (1v1)", 300), ("QUITTER", 380)]
-
         buttons = []
+
         for text, y in options:
             hovered = (
                 WIDTH // 2 - 150 < mouse[0] < WIDTH // 2 + 150 and y < mouse[1] < y + 50
