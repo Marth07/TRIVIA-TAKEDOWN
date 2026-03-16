@@ -2,51 +2,63 @@ import pygame
 
 
 class Fighter:
-
-    def __init__(self, name, x, y, hp, power, style, image):
+    def __init__(self, name, x, y, health, damage, special_damage, style, image, speed):
         self.name = name
-        self.hp = hp
-        self.power = power
+        self.max_health = health
+        self.health = health
+        self.damage = damage
+        self.special_damage = special_damage
         self.style = style
         self.image = image
-        self.rect = pygame.Rect((x, y, image.get_width(), image.get_height()))
-        self.attacking = False
-        self.health = 100
+        self.speed = speed
 
-    def move(self, surface, target, screen_width=1280):
-        SPEED = 10
+        self.rect = self.image.get_rect(midbottom=(x, y))
+        self.direction = 1
+
+    def move(self, screen, enemy):
+        keys = pygame.key.get_pressed()
+
+        # Gauche
+        if keys[pygame.K_LEFT] and self.rect.left > 0:
+            self.rect.x -= self.speed
+
+        # Droite
+        if keys[pygame.K_RIGHT] and self.rect.right < screen.get_width():
+            self.rect.x += self.speed
+
+        # Collision avec l'ennemi
+        if self.rect.colliderect(enemy.rect):
+            if self.rect.centerx < enemy.rect.centerx:
+                self.rect.right = enemy.rect.left
+            else:
+                self.rect.left = enemy.rect.right
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+
+    def ai_move(self, target, screen_width=1280):
         dx = 0
 
-        key = pygame.key.get_pressed()
-
-        if not self.attacking:
-            if key[pygame.K_LEFT]:
-                dx = -SPEED
-            if key[pygame.K_RIGHT]:
-                dx = SPEED
-
-        if key[pygame.K_r] or key[pygame.K_t]:
+        # Approche du joueur
+        if self.rect.centerx < target.rect.centerx - 60:
+            dx = self.speed
+        elif self.rect.centerx > target.rect.centerx + 60:
+            dx = -self.speed
+        else:
+            # Attaque si proche
             self.attack(target)
 
+        # Limites écran
         if self.rect.left + dx < 0:
             dx = -self.rect.left
         if self.rect.right + dx > screen_width:
             dx = screen_width - self.rect.right
 
         self.rect.x += dx
-        self.attacking = False
 
     def attack(self, target):
-        self.attacking = True
+        target.health -= self.damage
 
-        attacking = pygame.Rect(
-            self.rect.centerx, self.rect.y, 2 * self.rect.width, self.rect.height
-        )
-
-        if attacking.colliderect(target.rect):
-            target.health -= self.power
-            if target.health < 0:
-                target.health = 0
-
-    def draw(self, surface):
-        surface.blit(self.image, (self.rect.x, self.rect.y))
+    def special_attack(self, target):
+        """Attaque spéciale, plus puissante que l'attaque simple."""
+        target.health -= self.special_damage

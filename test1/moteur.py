@@ -2,9 +2,10 @@ import pygame
 import random
 from fighter import Fighter
 
+SCREEN_WIDTH, SCREEN_HEIGHT = 1280, 720
+
 pygame.init()
 
-SCREEN_WIDTH, SCREEN_HEIGHT = 1280, 720
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Trivia Takedown - Combat")
 
@@ -14,12 +15,75 @@ FPS = 60
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 YELLOW = (255, 255, 0)
+BLUE = (0,0 , 255)
 
-image_bg = pygame.image.load("assets/fond_de_map_desert.png")
+image_bg = pygame.image.load("../assets/fond_de_map_desert.png")
 
-# --------------------------
-# QUESTIONS AVEC CHOIX
-# --------------------------
+font_q = pygame.font.SysFont("Arial", 32)
+
+
+def draw_background():
+    scaled_bg = pygame.transform.scale(image_bg, (SCREEN_WIDTH, SCREEN_HEIGHT))
+    screen.blit(scaled_bg, (0, 0))
+
+
+def draw_health_bar(current_health, max_health, x, y, bar_color=BLUE):
+    ratio = max(0, current_health / max_health)
+    pygame.draw.rect(screen, WHITE, (x - 2, y - 2, 404, 34))
+    pygame.draw.rect(screen, RED, (x, y, 400 * ratio, 30))
+    pygame.draw.rect(screen, bar_color, (x, y, 400 * ratio, 30))
+
+    # Affichage des points de vie sous la barre
+    hp_text = font_q.render(
+        f"{int(max(0, current_health))}/{int(max_health)}", True, WHITE
+    )
+    screen.blit(
+        hp_text,
+        (x + 200 - hp_text.get_width() // 2, y + 35),
+    )
+
+
+def draw_choice_box(text, x, y, width=400, height=60):
+    mouse = pygame.mouse.get_pos()
+    rect = pygame.Rect(x, y, width, height)
+
+    color = (0, 255, 0) if rect.collidepoint(mouse) else (255, 255, 255)
+    pygame.draw.rect(screen, color, rect, 3)
+
+    txt = font_q.render(text, True, WHITE)
+    screen.blit(txt, (x + width // 2 - txt.get_width() // 2, y + 15))
+
+    return rect
+
+
+def victory_screen(winner):
+    running = True
+    font_big = pygame.font.SysFont("Arial", 80, bold=True)
+    font_small = pygame.font.SysFont("Arial", 40)
+
+    while running:
+        screen.fill((0, 0, 0))
+
+        text = font_big.render(f"{winner.name} a gagné !", True, (255, 215, 0))
+        screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, 150))
+
+        img = pygame.transform.scale(winner.image, (300, 300))
+        screen.blit(img, (SCREEN_WIDTH // 2 - 150, 300))
+
+        text2 = font_small.render("Appuie sur ESPACE pour revenir au menu", True, WHITE)
+        screen.blit(text2, (SCREEN_WIDTH // 2 - text2.get_width() // 2, 650))
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                return
+
+        pygame.display.update()
+
+
 questions_logique = [
     {
         "question": "Si tu as 5 barres de chocolat dans un bol et que t’en prends 3. Combien il t’en reste ?",
@@ -47,137 +111,73 @@ questions_logique = [
         "reponse": "pain",
     },
     {
-        "question": "Si un avion s'écrase sur la frontière entre la France et la Belgique, où enterre-t-on les rescapés ?",
-        "choix": ["France", "Belgique", "Nulle part", "Les deux"],
-        "reponse": "nulle part",
+        "question": "Tu as 10 euros. Tu achètes quelque chose à 7 euros. Combien il te reste d’argent ?",
+        "choix": ["3", "7", "10", "5"],
+        "reponse": "3",
     },
     {
-        "question": "Un coq pond un œuf sur le toit d’une maison. De quel côté tombe l’œuf ?",
-        "choix": ["Gauche", "Droite", "Aucun", "Devant"],
-        "reponse": "Aucun",
+        "question": "Un bus arrive avec 4 personnes dedans. 2 montent, 1 descend. Combien de personnes sont dans le bus ?",
+        "choix": ["5", "6", "7", "4"],
+        "reponse": "5",
     },
     {
-        "question": "Combien d’animaux de chaque espèce Moïse a-t-il pris dans son arche ?",
-        "choix": ["2", "4", "Aucun", "6"],
-        "reponse": "Aucun",
+        "question": "Tu as 3 paires de chaussettes. Combien as-tu de chaussettes au total ?",
+        "choix": ["3", "6", "9", "12"],
+        "reponse": "6",
     },
     {
-        "question": "Qu’est-ce qui pèse le plus lourd : 1 kg de plumes ou 1 kg de plomb ?",
-        "choix": ["Plomb", "Plumes", "Les deux", "Aucun"],
-        "reponse": "Les deux",
+        "question": "Il est 14h. Dans 3 heures, quelle heure sera-t-il ?",
+        "choix": ["15h", "16h", "17h", "18h"],
+        "reponse": "17h",
     },
     {
-        "question": "Combien font 7 × 8 ?",
-        "choix": ["54", "56", "58", "64"],
-        "reponse": "56",
-    },
-    {
-        "question": "Si un carré a un côté de 4 cm, quel est son périmètre ?",
-        "choix": ["8 cm", "12 cm", "16 cm", "20 cm"],
-        "reponse": "16 cm",
-    },
-    {
-        "question": "Quel est le résultat de 15 + 27 ?",
-        "choix": ["32", "42", "40", "52"],
-        "reponse": "42",
-    },
-    {
-        "question": "Si tu divises 100 par 0.5, tu obtiens :",
-        "choix": ["50", "200", "150", "100"],
-        "reponse": "200",
-    },
-    {
-        "question": "Quel est le carré de 12 ?",
-        "choix": ["124", "144", "132", "156"],
-        "reponse": "144",
-    },
-    {
-        "question": "Quelle est la capitale de l’Italie ?",
-        "choix": ["Rome", "Milan", "Naples", "Venise"],
-        "reponse": "Rome",
-    },
-    {
-        "question": "Quel est l’océan le plus grand du monde ?",
-        "choix": ["Atlantique", "Indien", "Arctique", "Pacifique"],
-        "reponse": "Pacifique",
-    },
-    {
-        "question": "Qui a peint la Joconde ?",
-        "choix": ["Van Gogh", "Picasso", "Léonard de Vinci", "Monet"],
-        "reponse": "Léonard de Vinci",
-    },
-    {
-        "question": "Quel est le plus grand désert du monde ?",
-        "choix": ["Sahara", "Gobi", "Antarctique", "Arabie"],
-        "reponse": "Antarctique",
-    },
-    {
-        "question": "Combien de continents existe-t-il ?",
-        "choix": ["5", "6", "7", "8"],
-        "reponse": "7",
-    },
-    {
-        "question": "Quel est l’animal terrestre le plus rapide ?",
-        "choix": ["Guépard", "Lion", "Antilope", "Tigre"],
-        "reponse": "Guépard",
-    },
-    {
-        "question": "Quel est le plus long fleuve du monde ?",
-        "choix": ["Nil", "Amazone", "Yangtsé", "Mississippi"],
-        "reponse": "Amazone",
-    },
-    {
-        "question": "Quel pays a inventé les Jeux Olympiques ?",
-        "choix": ["Italie", "Grèce", "France", "Turquie"],
-        "reponse": "Grèce",
-    },
-    {
-        "question": "Quel est l’organe principal du système nerveux ?",
-        "choix": ["Cœur", "Poumons", "Cerveau", "Foie"],
-        "reponse": "Cerveau",
+        "question": "Une pizza est coupée en 8 parts. Tu en manges la moitié. Combien de parts as-tu mangées ?",
+        "choix": ["2", "3", "4", "8"],
+        "reponse": "4",
     },
 ]
-
-font_q = pygame.font.SysFont("Arial", 32)
-
-
-def draw_background():
-    scaled_bg = pygame.transform.scale(image_bg, (SCREEN_WIDTH, SCREEN_HEIGHT))
-    screen.blit(scaled_bg, (0, 0))
-
-
-def draw_health_bar(health, x, y):
-    ratio = health / 100
-    pygame.draw.rect(screen, WHITE, (x - 2, y - 2, 404, 34))
-    pygame.draw.rect(screen, RED, (x, y, 400 * ratio, 30))
-    pygame.draw.rect(screen, YELLOW, (x, y, 400 * ratio, 30))
 
 
 def start_fight(player, enemy):
     run = True
-    # Réinitialiser la vie au début du combat
-    player.health = 100
-    enemy.health = 100
+
+    player.health = player.max_health
+    enemy.health = enemy.max_health
 
     player.image = pygame.transform.scale(player.image, (250, 250))
     enemy.image = pygame.transform.scale(enemy.image, (250, 250))
 
     player.rect = player.image.get_rect(midbottom=(250, 650))
     enemy.rect = enemy.image.get_rect(midbottom=(1030, 650))
-    # Barrière centrale
 
     collision_box = pygame.Rect(SCREEN_WIDTH // 2 - 50, 500, 100, 200)
 
-    # QUIZ
     question_interval = 5000
     last_question_time = pygame.time.get_ticks()
     question_active = False
     current_question = None
     time_left = 0
+    enemy_answer_delay = 0
 
-    # ROUND
-    round_time = 60000
-    round_start = pygame.time.get_ticks()
+    # Séries de bonnes réponses
+    player_streak = 0
+    enemy_streak = 0
+
+    # Timers d'animation d'attaque (en millisecondes)
+    player_hit_timer = 0
+    enemy_hit_timer = 0
+    player_special_timer = 0
+    enemy_special_timer = 0
+
+    # Questions restantes pour ce combat (toutes différentes)
+    remaining_questions = questions_logique.copy()
+    random.shuffle(remaining_questions)
+
+    enemy.direction = -1
+    patrol_left = 700
+    patrol_right = 1100
+
+    choice_boxes = []
 
     while run:
         dt = clock.tick(FPS)
@@ -185,22 +185,107 @@ def start_fight(player, enemy):
 
         current_time = pygame.time.get_ticks()
 
-        # FIN DU ROUND
-        if current_time - round_start >= round_time:
-            print("FIN DU ROUND")
-            run = False
-
-        # LANCER QUESTION
+        # Nouvelle question
         if (
             not question_active
             and current_time - last_question_time >= question_interval
+            and remaining_questions
         ):
-            current_question = random.choice(questions_logique)
+            current_question = remaining_questions.pop()
             question_active = True
-            time_left = 5000
+            time_left = 10000
             last_question_time = current_time
+            enemy_answer_delay = 5000  # IA répond après 5 sec
+            choice_boxes = []
 
-        # AFFICHAGE QUESTION
+        # IA + timer
+        if question_active:
+            enemy_answer_delay -= dt
+            if enemy_answer_delay <= 0:
+                if random.random() < 0.5:
+                    enemy_answer = current_question["reponse"].lower()
+                else:
+                    enemy_answer = random.choice(current_question["choix"]).lower()
+
+                if enemy_answer == current_question["reponse"].lower():
+                    # Ennemi répond bien
+                    enemy_streak += 1
+                    player_streak = 0
+
+                    # Attaque spéciale de l'ennemi après 3 bonnes réponses
+                    if enemy_streak >= 3:
+                        player.health -= enemy.special_damage
+                        enemy_streak = 0
+                        player_special_timer = 250  # gros impact sur le joueur
+                    else:
+                        player.health -= enemy.damage
+                        player_hit_timer = 180  # impact normal sur le joueur
+                else:
+                    # Ennemi se trompe
+                    enemy_streak = 0
+                    enemy.health -= player.damage
+                    enemy_hit_timer = 180  # impact sur l'ennemi
+
+                question_active = False
+
+            time_left -= dt
+            if time_left <= 0:
+                question_active = False
+
+        # Mise à jour des timers d'animation
+        if player_hit_timer > 0:
+            player_hit_timer = max(0, player_hit_timer - dt)
+        if enemy_hit_timer > 0:
+            enemy_hit_timer = max(0, enemy_hit_timer - dt)
+        if player_special_timer > 0:
+            player_special_timer = max(0, player_special_timer - dt)
+        if enemy_special_timer > 0:
+            enemy_special_timer = max(0, enemy_special_timer - dt)
+
+        # Barres de vie
+        draw_health_bar(player.health, player.max_health, 20, 20, BLUE)
+        draw_health_bar(enemy.health, enemy.max_health, 860, 20, RED)
+
+        # Mouvements
+        if not question_active:
+            player.move(screen, enemy)
+
+            enemy.rect.x += 4 * enemy.direction
+            if enemy.rect.x <= patrol_left:
+                enemy.direction = 1
+            elif enemy.rect.x >= patrol_right:
+                enemy.direction = -1
+
+        # Collision barrière
+        if player.rect.colliderect(collision_box):
+            player.rect.x -= 10
+        if enemy.rect.colliderect(collision_box):
+            enemy.rect.x += 10
+
+        # Dessin des fighters
+        player.draw(screen)
+        enemy.draw(screen)
+
+        # Effets visuels d'attaque sur les personnages
+        # Joueur touché (par l'ennemi)
+        if player_hit_timer > 0 or player_special_timer > 0:
+            overlay = pygame.Surface((player.rect.width, player.rect.height), pygame.SRCALPHA)
+            if player_special_timer > 0:
+                overlay.fill((255, 0, 0, 120))  # rouge fort pour spéciale
+            else:
+                overlay.fill((255, 255, 0, 100))  # jaune pour coup normal
+            screen.blit(overlay, player.rect.topleft)
+
+        # Ennemi touché (par le joueur)
+        if enemy_hit_timer > 0 or enemy_special_timer > 0:
+            overlay = pygame.Surface((enemy.rect.width, enemy.rect.height), pygame.SRCALPHA)
+            if enemy_special_timer > 0:
+                overlay.fill((0, 0, 255, 120))  # bleu fort pour spéciale
+            else:
+                overlay.fill((255, 255, 0, 100))  # jaune pour coup normal
+            screen.blit(overlay, enemy.rect.topleft)
+
+        # Affichage question
         if question_active:
             overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
             overlay.set_alpha(180)
@@ -210,55 +295,68 @@ def start_fight(player, enemy):
             text = font_q.render(current_question["question"], True, WHITE)
             screen.blit(text, (SCREEN_WIDTH // 2 - text.get_width() // 2, 150))
 
-            for i, choix in enumerate(current_question["choix"], start=1):
-                c = font_q.render(f"{i}. {choix}", True, WHITE)
-                screen.blit(c, (SCREEN_WIDTH // 2 - c.get_width() // 2, 250 + i * 50))
+            choice_boxes = [
+                draw_choice_box(current_question["choix"][0], 150, 300),
+                draw_choice_box(current_question["choix"][1], 730, 300),
+                draw_choice_box(current_question["choix"][2], 150, 400),
+                draw_choice_box(current_question["choix"][3], 730, 400),
+            ]
 
-            timer_text = font_q.render(f"Temps restant : {time_left//1000}", True, RED)
+            timer_text = font_q.render(
+                f"Temps restant : {time_left // 1000}", True, RED
+            )
             screen.blit(
                 timer_text, (SCREEN_WIDTH // 2 - timer_text.get_width() // 2, 550)
             )
 
-            time_left -= dt
+        # Clamp des points de vie pour éviter les incohérences d'affichage
+        player.health = max(0, player.health)
+        enemy.health = max(0, enemy.health)
 
-            if time_left <= 0:
-                question_active = False
+        # Fin du combat
+        if player.health <= 0 and enemy.health > 0:
+            victory_screen(enemy)
+            return
 
-        # HEALTH
-        draw_health_bar(player.health, 20, 20)
-        draw_health_bar(enemy.health, 860, 20)
+        if enemy.health <= 0 and player.health > 0:
+            victory_screen(player)
+            return
 
-        # MOUVEMENT UNIQUEMENT SI PAS DE QUESTION
-        if not question_active:
-            player.move(screen, enemy)
-            # Collision avec la barrière centrale
-        if player.rect.colliderect(collision_box):
-            player.rect.x -= 10
-
-        if enemy.rect.colliderect(collision_box):
-            enemy.rect.x += 10
-
-        # AFFICHAGE FIGHTERS
-        player.draw(screen)
-        enemy.draw(screen)
-
-        # EVENTS
+        # Clic sur les choix
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                run = False
+                return
 
-            if question_active and event.type == pygame.KEYDOWN:
-                if event.key in [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4]:
-                    choix_index = int(event.unicode) - 1
-                    reponse_user = current_question["choix"][choix_index].lower()
+            if question_active and event.type == pygame.MOUSEBUTTONDOWN:
+                mouse = pygame.mouse.get_pos()
+                for i, rect in enumerate(choice_boxes):
+                    if rect.collidepoint(mouse):
+                        if (
+                            current_question["choix"][i].lower()
+                            == current_question["reponse"].lower()
+                        ):
+                            # Joueur répond bien
+                            player_streak += 1
+                            enemy_streak = 0
 
-                    if reponse_user == current_question["reponse"].lower():
-                        enemy.health -= 10
-                    else:
-                        player.health -= 10
+                            # Récupération de vie aléatoire
+                            heal_amount = random.randint(5, 15)
+                            player.health = min(player.max_health, player.health + heal_amount)
 
-                    question_active = False
+                            # Attaque spéciale du joueur après 3 bonnes réponses
+                            if player_streak >= 3:
+                                enemy.health -= player.special_damage
+                                player_streak = 0
+                                enemy_special_timer = 250  # gros impact sur l'ennemi
+                            else:
+                                enemy.health -= player.damage
+                                enemy_hit_timer = 180  # impact normal sur l'ennemi
+                        else:
+                            # Joueur se trompe
+                            player_streak = 0
+                            player.health -= enemy.damage
+                            player_hit_timer = 180  # impact sur le joueur
+                        question_active = False
+                        break
 
         pygame.display.update()
-
-    return
