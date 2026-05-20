@@ -8,7 +8,7 @@ from moteur import start_fight, play_menu_music, stop_music
 from fighter import Fighter
 
 def get_asset_path(relative_path):
-    """Cherche les assets à côté du .exe d'abord, puis dans _MEIPASS"""
+    
     if getattr(sys, 'frozen', False):
         base = os.path.dirname(sys.executable)
     else:
